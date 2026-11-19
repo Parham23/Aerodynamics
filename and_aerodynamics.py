@@ -4141,8 +4141,10 @@ def chapter9():
         }
 
 
-    def display_airfoil_wave(name, wave, p_upstream, p_downstream):
-
+        def display_airfoil_wave(
+            name, wave, p_upstream, p_downstream,
+            gamma=GAMMA_DEFAULT
+         ):
         print(f"\n========== {name} ==========")
         print(f"Wave type = {wave['type']}")
 
@@ -4216,7 +4218,7 @@ def chapter9():
 
         elif wave["type"] == "Expansion":
 
-            nu1 = prandtl_meyer(M1, gamma_airfoil)
+            nu1 = prandtl_meyer(M1, gamma)
             nu2 = nu1 + theta_rad
 
             print("\n2. Prandtl-Meyer equation:")
@@ -5146,6 +5148,35 @@ def chapter9():
             print("Invalid selection.")
             continue
 
+        
+        # ------------------------------------------------------
+        # AIRFOIL OPTIONS: RUN DIRECTLY
+        # No unnecessary Region 1 input for airfoil problems.
+        # ------------------------------------------------------
+
+        if choice == "4":
+            flat_plate_airfoil()
+
+            if not ask_yes_no("\nSolve another Chapter 9 problem?"):
+                return
+
+            continue
+
+        if choice == "5":
+            try:
+                diamond_airfoil()
+            except ValueError as error:
+                print(f"\nDiamond airfoil calculation error: {error}")
+
+            if not ask_yes_no("\nSolve another Chapter 9 problem?"):
+                return
+
+            continue
+
+        # ------------------------------------------------------
+        # GAS PROPERTIES FOR SEQUENTIAL FLOW / INTERACTION
+        # ------------------------------------------------------
+
         print("\n========== GAS PROPERTIES ==========")
 
         gamma = ask_float(
@@ -5165,7 +5196,6 @@ def chapter9():
         if region1 is None:
             continue
 
-        # Interaction calculations use the same freestream.
         if choice == "2":
             opposing_interaction(region1)
             continue
@@ -5173,21 +5203,8 @@ def chapter9():
         if choice == "3":
             same_direction_interaction(region1)
             continue
-        elif choice == "4":
-            flat_plate_airfoil()
 
-            if not ask_yes_no("\nSolve another Chapter 9 problem?"):
-                return
-
-            continue
-        elif choice == "5":
-            diamond_airfoil()
-
-            if not ask_yes_no("\nSolve another Chapter 9 problem?"):
-                return
-
-            continue
-
+        # Choice 1 continues into the original sequential solver.
         # Choice 1 continues into your original sequential solver.
 
 
