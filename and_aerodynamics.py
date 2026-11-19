@@ -4140,24 +4140,138 @@ def chapter9():
             "p0_ratio": 1.0
         }
 
+
     def display_airfoil_wave(name, wave, p_upstream, p_downstream):
-        print(f"\n---------- {name} ----------")
-        print(f"Wave type       : {wave['type']}")
-        print(f"M1              : {wave['M1']:.7f}")
-        print(f"M2              : {wave['M2']:.7f}")
-        print(f"Turning angle   : {wave['theta']:.6f} deg")
 
-        if wave["beta"] is not None:
-            print(f"Shock angle     : {wave['beta']:.6f} deg")
-            print(f"Mn1             : {wave['Mn1']:.7f}")
-            print(f"Mn2             : {wave['Mn2']:.7f}")
+        print(f"\n========== {name} ==========")
+        print(f"Wave type = {wave['type']}")
 
-        print(f"p2/p1           : {wave['p_ratio']:.8f}")
-        print(f"rho2/rho1       : {wave['rho_ratio']:.8f}")
-        print(f"T2/T1           : {wave['T_ratio']:.8f}")
-        print(f"p02/p01         : {wave['p0_ratio']:.8f}")
-        print(f"Upstream p      : {p_upstream:.6f} Pa")
-        print(f"Downstream p    : {p_downstream:.6f} Pa")
+        M1 = wave["M1"]
+        M2 = wave["M2"]
+        theta_deg = wave["theta"]
+        theta_rad = math.radians(theta_deg)
+
+        print("\n1. Upstream and downstream Mach numbers:")
+        print(f"M1 = {M1:.8f}")
+        print(f"M2 = {M2:.8f}")
+        print(f"Flow turning = {theta_deg:.8f} deg")
+
+        if wave["type"] == "Oblique shock":
+
+            beta_deg = wave["beta"]
+            beta = math.radians(beta_deg)
+
+            print("\n2. Theta-beta-M equation:")
+            print(
+                "tan(theta) = 2*cot(beta)*"
+                "(M1^2*sin^2(beta)-1) / "
+                "(M1^2*(gamma+cos(2*beta))+2)"
+            )
+            print("Weak attached-shock solution selected.")
+            print(f"beta = {beta_deg:.8f} deg")
+
+            print("\n3. Upstream normal Mach number:")
+            print("Mn1 = M1 * sin(beta)")
+            print(
+                f"Mn1 = {M1:.8f} * sin({beta_deg:.8f})"
+            )
+            print(f"Mn1 = {wave['Mn1']:.8f}")
+
+            print("\n4. Downstream normal Mach number:")
+            print(
+                "Mn2 = sqrt((1+(gamma-1)*Mn1^2/2) / "
+                "(gamma*Mn1^2-(gamma-1)/2))"
+            )
+            print(f"Mn2 = {wave['Mn2']:.8f}")
+
+            print("\n5. Static pressure ratio:")
+            print(
+                "p2/p1 = 1 + 2*gamma/(gamma+1)*(Mn1^2-1)"
+            )
+            print(f"p2/p1 = {wave['p_ratio']:.8f}")
+
+            print("\n6. Density ratio:")
+            print(
+                "rho2/rho1 = (gamma+1)*Mn1^2 / "
+                "((gamma-1)*Mn1^2+2)"
+            )
+            print(f"rho2/rho1 = {wave['rho_ratio']:.8f}")
+
+            print("\n7. Temperature ratio:")
+            print("T2/T1 = (p2/p1)/(rho2/rho1)")
+            print(f"T2/T1 = {wave['T_ratio']:.8f}")
+
+            print("\n8. Downstream Mach number:")
+            print("M2 = Mn2 / sin(beta-theta)")
+            print(f"M2 = {M2:.8f}")
+
+            print("\n9. Stagnation pressure ratio:")
+            print("p02/p01 = (p2/p1) *")
+            print(
+                "[(1+(gamma-1)*M2^2/2) / "
+                "(1+(gamma-1)*M1^2/2)]"
+                "^[gamma/(gamma-1)]"
+            )
+            print(f"p02/p01 = {wave['p0_ratio']:.8f}")
+
+        elif wave["type"] == "Expansion":
+
+            nu1 = prandtl_meyer(M1, gamma_airfoil)
+            nu2 = nu1 + theta_rad
+
+            print("\n2. Prandtl-Meyer equation:")
+            print(
+                "nu = sqrt((gamma+1)/(gamma-1))*"
+                "atan(sqrt((gamma-1)/(gamma+1)*(M^2-1)))"
+                " - atan(sqrt(M^2-1))"
+            )
+
+            print("\n3. Initial Prandtl-Meyer angle:")
+            print(f"nu1 = {math.degrees(nu1):.8f} deg")
+
+            print("\n4. Final Prandtl-Meyer angle:")
+            print("nu2 = nu1 + theta")
+            print(
+                f"nu2 = {math.degrees(nu1):.8f} "
+                f"+ {theta_deg:.8f}"
+            )
+            print(f"nu2 = {math.degrees(nu2):.8f} deg")
+
+            print("\n5. Inverse Prandtl-Meyer solution:")
+            print("M2 = nu_inverse(nu2, gamma)")
+            print(f"M2 = {M2:.8f}")
+
+            print("\n6. Temperature ratio:")
+            print(
+                "T2/T1 = (1+(gamma-1)*M1^2/2) / "
+                "(1+(gamma-1)*M2^2/2)"
+            )
+            print(f"T2/T1 = {wave['T_ratio']:.8f}")
+
+            print("\n7. Pressure ratio:")
+            print("p2/p1 = (T2/T1)^[gamma/(gamma-1)]")
+            print(f"p2/p1 = {wave['p_ratio']:.8f}")
+
+            print("\n8. Density ratio:")
+            print("rho2/rho1 = (p2/p1)/(T2/T1)")
+            print(f"rho2/rho1 = {wave['rho_ratio']:.8f}")
+
+            print("\n9. Stagnation pressure:")
+            print("p02/p01 = 1.0 (isentropic expansion)")
+            print(f"p02/p01 = {wave['p0_ratio']:.8f}")
+
+        else:
+            print("\nNo wave occurs because the turning angle is zero.")
+            print("All flow properties remain unchanged.")
+
+        print("\n10. Absolute static pressures:")
+
+        print("p_downstream = p_upstream * (p2/p1)")
+        print(
+            f"p_downstream = {p_upstream:.8f} * "
+            f"{wave['p_ratio']:.8f}"
+        )
+        print(f"p_downstream = {p_downstream:.8f} Pa")
 
     def airfoil_common_inputs():
         print("\n========== AIRFOIL INPUT DATA ==========")
@@ -4556,41 +4670,455 @@ def chapter9():
             + Fy_per_span * math.cos(alpha_rad)
         )
 
-        drag_total = drag_per_span * span
-        lift_total = lift_per_span * span
 
-        reference_area = chord * span
-        q_inf = 0.5 * gamma_airfoil * p_inf * M_inf**2
+    def diamond_airfoil():
+        print("\n========== DIAMOND AIRFOIL ==========")
+        print("Anderson Chapter 9 - Shock / Expansion Method")
 
-        CD = drag_total / (q_inf * reference_area)
-        CL = lift_total / (q_inf * reference_area)
+        # ------------------------------------------------------
+        # STEP 1: INPUT DATA
+        # ------------------------------------------------------
 
-        print("\n========== DIAMOND AIRFOIL RESULTANT ==========")
+        gamma_airfoil = 1.4
 
-        print(f"Fx' = {Fx_per_span:.6f} N/m")
-        print(f"Fy' = {Fy_per_span:.6f} N/m")
+        print("\n========== STEP 1: GIVEN DATA ==========")
+        print(f"Specific heat ratio gamma = {gamma_airfoil:.4f}")
 
-        print("\nForce resolution:")
+        chord = ask_float(
+            "Airfoil chord c [m]: ",
+            minimum=0.0
+        )
+
+        M_inf = ask_float(
+            "Freestream Mach number M_inf: ",
+            minimum=1.0
+        )
+
+        p_inf = ask_float(
+            "Freestream static pressure p_inf [Pa]: ",
+            minimum=0.0
+        )
+
+        epsilon_deg = ask_float(
+            "Diamond half-angle epsilon [degrees]: ",
+            minimum=0.0
+        )
+
+        alpha_deg = ask_float(
+            "Angle of attack alpha [degrees]: "
+        )
+
+        if epsilon_deg >= 89.0:
+            print("Invalid airfoil angle.")
+            return
+
+        gamma = gamma_airfoil
+
+        # ------------------------------------------------------
+        # STEP 2: AIRFOIL GEOMETRY
+        # ------------------------------------------------------
+
+        epsilon = math.radians(epsilon_deg)
+        alpha = math.radians(alpha_deg)
+
+        thickness = chord * math.tan(epsilon)
+        half_chord = chord / 2.0
+        half_thickness = thickness / 2.0
+
+        print("\n========== STEP 2: AIRFOIL GEOMETRY ==========")
+        print("Maximum thickness:")
+        print("t = c * tan(epsilon)")
+        print(
+            f"t = {chord:.6f} * tan({epsilon_deg:.6f})"
+        )
+        print(f"t = {thickness:.8f} m")
+
+        print("\nHalf chord:")
+        print("c/2 = c / 2")
+        print(f"c/2 = {half_chord:.8f} m")
+
+        print("\nHalf thickness:")
+        print("t/2 = t / 2")
+        print(f"t/2 = {half_thickness:.8f} m")
+
+        print("\nAirfoil surface angles:")
+        print(f"Upper surface angle = +{epsilon_deg:.6f} deg")
+        print(f"Lower surface angle = -{epsilon_deg:.6f} deg")
+
+        # ------------------------------------------------------
+        # STEP 3: FREESTREAM PROPERTIES
+        # ------------------------------------------------------
+
+        q_inf = 0.5 * gamma * p_inf * M_inf**2
+
+        p0_ratio_inf = (
+            1.0 + (gamma - 1.0) * M_inf**2 / 2.0
+        ) ** (gamma / (gamma - 1.0))
+
+        p0_inf = p_inf * p0_ratio_inf
+
+        print("\n========== STEP 3: FREESTREAM ==========")
+
+        print("\nDynamic pressure:")
+        print("q_inf = 1/2 * gamma * p_inf * M_inf^2")
+        print(
+            f"q_inf = 0.5 * {gamma:.6f} * "
+            f"{p_inf:.6f} * {M_inf:.6f}^2"
+        )
+        print(f"q_inf = {q_inf:.8f} Pa")
+
+        print("\nFreestream stagnation pressure:")
+        print("p0_inf/p_inf = [1 + (gamma-1)M_inf^2/2]"
+              "^[gamma/(gamma-1)]")
+        print(f"p0_inf/p_inf = {p0_ratio_inf:.8f}")
+        print("p0_inf = p_inf * (p0_inf/p_inf)")
+        print(f"p0_inf = {p0_inf:.8f} Pa")
+
+        # ------------------------------------------------------
+        # STEP 4: LEADING-EDGE FLOW TURNS
+        # ------------------------------------------------------
+
+        upper_turn = epsilon_deg - alpha_deg
+        lower_turn = epsilon_deg + alpha_deg
+
+        rear_turn = 2.0 * epsilon_deg
+
+        print("\n========== STEP 4: FLOW TURNING ANGLES ==========")
+
+        print("\nUpper leading edge:")
+        print("theta_upper = epsilon - alpha")
+        print(
+            f"theta_upper = {epsilon_deg:.6f} "
+            f"- ({alpha_deg:.6f})"
+        )
+        print(f"theta_upper = {upper_turn:.6f} deg")
+
+        print("\nLower leading edge:")
+        print("theta_lower = epsilon + alpha")
+        print(
+            f"theta_lower = {epsilon_deg:.6f} "
+            f"+ ({alpha_deg:.6f})"
+        )
+        print(f"theta_lower = {lower_turn:.6f} deg")
+
+        print("\nRear-corner turning:")
+        print("theta_rear = 2 * epsilon")
+        print(
+            f"theta_rear = 2 * {epsilon_deg:.6f}"
+        )
+        print(f"theta_rear = {rear_turn:.6f} deg")
+
+        # ------------------------------------------------------
+        # STEP 5: CALCULATE LEADING-EDGE WAVES
+        # Positive turn = shock
+        # Negative turn = expansion
+        # ------------------------------------------------------
+
+        def signed_wave(M1, signed_turn, gamma):
+            if abs(signed_turn) < 1e-10:
+                return {
+                    "type": "No turning",
+                    "M1": M1,
+                    "M2": M1,
+                    "theta": 0.0,
+                    "beta": None,
+                    "Mn1": None,
+                    "Mn2": None,
+                    "p_ratio": 1.0,
+                    "rho_ratio": 1.0,
+                    "T_ratio": 1.0,
+                    "p0_ratio": 1.0
+                }
+
+            if signed_turn > 0:
+                return airfoil_shock(
+                    M1, signed_turn, gamma
+                )
+
+            return airfoil_expansion(
+                M1, abs(signed_turn), gamma
+            )
+
+        upper_front = signed_wave(
+            M_inf, upper_turn, gamma
+        )
+
+        lower_front = signed_wave(
+            M_inf, lower_turn, gamma
+        )
+
+        M_upper_front = upper_front["M2"]
+        M_lower_front = lower_front["M2"]
+
+        p_upper_front = (
+            p_inf * upper_front["p_ratio"]
+        )
+
+        p_lower_front = (
+            p_inf * lower_front["p_ratio"]
+        )
+
+        print("\n========== STEP 5: LEADING-EDGE RESULTS ==========")
+
+        display_airfoil_wave(
+            "UPPER FRONT PANEL",
+            upper_front,
+            p_inf,
+            p_upper_front
+        )
+
+        display_airfoil_wave(
+            "LOWER FRONT PANEL",
+            lower_front,
+            p_inf,
+            p_lower_front
+        )
+
+        # ------------------------------------------------------
+        # STEP 6: REAR-CORNER EXPANSIONS
+        # ------------------------------------------------------
+
+        upper_rear = airfoil_expansion(
+            M_upper_front,
+            rear_turn,
+            gamma
+        )
+
+        lower_rear = airfoil_expansion(
+            M_lower_front,
+            rear_turn,
+            gamma
+        )
+
+        p_upper_rear = (
+            p_upper_front * upper_rear["p_ratio"]
+        )
+
+        p_lower_rear = (
+            p_lower_front * lower_rear["p_ratio"]
+        )
+
+        print("\n========== STEP 6: REAR EXPANSIONS ==========")
+
+        display_airfoil_wave(
+            "UPPER REAR PANEL",
+            upper_rear,
+            p_upper_front,
+            p_upper_rear
+        )
+
+        display_airfoil_wave(
+            "LOWER REAR PANEL",
+            lower_rear,
+            p_lower_front,
+            p_lower_rear
+        )
+
+        # ------------------------------------------------------
+        # STEP 7: PANEL PRESSURES
+        # ------------------------------------------------------
+
+        print("\n========== STEP 7: PANEL PRESSURES ==========")
+
+        panels = [
+            ("Upper front", p_upper_front,
+             0.0, 0.0, half_chord, half_thickness),
+
+            ("Upper rear", p_upper_rear,
+             half_chord, half_thickness, chord, 0.0),
+
+            ("Lower rear", p_lower_rear,
+             chord, 0.0, half_chord, -half_thickness),
+
+            ("Lower front", p_lower_front,
+             half_chord, -half_thickness, 0.0, 0.0)
+        ]
+
+        print(f"Freestream pressure = {p_inf:.8f} Pa")
+        print("\nPanel pressure summary:")
+
+        for name, pressure, x1, y1, x2, y2 in panels:
+            print(
+                f"{name:<15} = {pressure:.8f} Pa"
+            )
+
+        # ------------------------------------------------------
+        # STEP 8: PRESSURE FORCE ON EACH PANEL
+        # ------------------------------------------------------
+
+        Fx_per_span = 0.0
+        Fy_per_span = 0.0
+
+        print("\n========== STEP 8: PANEL PRESSURE FORCES ==========")
+
+        print("For each panel:")
+        print("Delta p = p_panel - p_inf")
+        print("Fx' = Delta p * dy")
+        print("Fy' = -Delta p * dx")
+
+        for name, pressure, x1, y1, x2, y2 in panels:
+
+            dx = x2 - x1
+            dy = y2 - y1
+
+            gauge_pressure = pressure - p_inf
+
+            Fx_panel = gauge_pressure * dy
+            Fy_panel = -gauge_pressure * dx
+
+            Fx_per_span += Fx_panel
+            Fy_per_span += Fy_panel
+
+            print(f"\n--- {name} ---")
+            print(f"x1 = {x1:.8f} m")
+            print(f"y1 = {y1:.8f} m")
+            print(f"x2 = {x2:.8f} m")
+            print(f"y2 = {y2:.8f} m")
+            print(f"dx = {dx:.8f} m")
+            print(f"dy = {dy:.8f} m")
+
+            print(f"Panel pressure = {pressure:.8f} Pa")
+            print(
+                f"Gauge pressure = {pressure:.8f} "
+                f"- {p_inf:.8f}"
+            )
+            print(f"Delta p = {gauge_pressure:.8f} Pa")
+
+            print("Fx' = Delta p * dy")
+            print(
+                f"Fx' = {gauge_pressure:.8f} "
+                f"* {dy:.8f}"
+            )
+            print(f"Fx' = {Fx_panel:.8f} N/m")
+
+            print("Fy' = -Delta p * dx")
+            print(
+                f"Fy' = -({gauge_pressure:.8f}) "
+                f"* {dx:.8f}"
+            )
+            print(f"Fy' = {Fy_panel:.8f} N/m")
+
+        print("\nTotal body-axis forces per unit span:")
+        print(f"Fx' = {Fx_per_span:.8f} N/m")
+        print(f"Fy' = {Fy_per_span:.8f} N/m")
+
+        # ------------------------------------------------------
+        # STEP 9: RESOLVE FORCES INTO FREESTREAM AXES
+        # ------------------------------------------------------
+
+        drag_per_span = (
+            Fx_per_span * math.cos(alpha)
+            - Fy_per_span * math.sin(alpha)
+        )
+
+        lift_per_span = (
+            Fx_per_span * math.sin(alpha)
+            + Fy_per_span * math.cos(alpha)
+        )
+
+        print("\n========== STEP 9: LIFT AND DRAG ==========")
+
+        print("\nDrag per unit span:")
         print("D' = Fx' cos(alpha) - Fy' sin(alpha)")
+        print(
+            f"D' = {Fx_per_span:.8f} * cos({alpha_deg:.8f})"
+            f" - ({Fy_per_span:.8f}) * sin({alpha_deg:.8f})"
+        )
+        print(f"D' = {drag_per_span:.8f} N/m")
+
+        print("\nLift per unit span:")
         print("L' = Fx' sin(alpha) + Fy' cos(alpha)")
+        print(
+            f"L' = {Fx_per_span:.8f} * sin({alpha_deg:.8f})"
+            f" + {Fy_per_span:.8f} * cos({alpha_deg:.8f})"
+        )
+        print(f"L' = {lift_per_span:.8f} N/m")
 
-        print(f"D' = {drag_per_span:.6f} N/m")
-        print(f"L' = {lift_per_span:.6f} N/m")
+        # ------------------------------------------------------
+        # STEP 10: AERODYNAMIC COEFFICIENTS
+        # Unit span is used because span was not supplied.
+        # ------------------------------------------------------
 
-        print("\nTotal forces:")
-        print(f"D = {drag_total:.6f} N")
-        print(f"L = {lift_total:.6f} N")
+        reference_area_per_span = chord * 1.0
 
-        print("\nAerodynamic coefficients:")
-        print(f"q_inf = {q_inf:.6f} Pa")
-        print(f"S = {reference_area:.6f} m^2")
-        print(f"CD = {CD:.8f}")
+        CL = (
+            lift_per_span /
+            (q_inf * reference_area_per_span)
+        )
+
+        CD = (
+            drag_per_span /
+            (q_inf * reference_area_per_span)
+        )
+
+        print("\n========== STEP 10: AERODYNAMIC COEFFICIENTS ==========")
+
+        print("\nReference area per unit span:")
+        print("S' = chord * 1")
+        print(f"S' = {reference_area_per_span:.8f} m^2/m")
+
+        print("\nLift coefficient:")
+        print("CL = L' / (q_inf * chord)")
+        print(
+            f"CL = {lift_per_span:.8f} / "
+            f"({q_inf:.8f} * {chord:.8f})"
+        )
         print(f"CL = {CL:.8f}")
 
-        if abs(CD) > 1e-12:
-            print(f"L/D = {CL / CD:.8f}")
+        print("\nDrag coefficient:")
+        print("CD = D' / (q_inf * chord)")
+        print(
+            f"CD = {drag_per_span:.8f} / "
+            f"({q_inf:.8f} * {chord:.8f})"
+        )
+        print(f"CD = {CD:.8f}")
+
+        print("\nLift-to-drag ratio:")
+        if abs(drag_per_span) > 1e-12:
+            print("L/D = L' / D'")
+            print(
+                f"L/D = {lift_per_span:.8f} / "
+                f"{drag_per_span:.8f}"
+            )
+            print(
+                f"L/D = {lift_per_span / drag_per_span:.8f}"
+            )
         else:
-            print("L/D is undefined because CD is zero.")
+            print("L/D is undefined because drag is zero.")
+
+        # ------------------------------------------------------
+        # STEP 11: FINAL SUMMARY
+        # ------------------------------------------------------
+
+        print("\n================================================")
+        print("             FINAL DIAMOND AIRFOIL RESULTS")
+        print("================================================")
+
+        print(f"Chord                  = {chord:.8f} m")
+        print(f"Maximum thickness      = {thickness:.8f} m")
+        print(f"Mach number             = {M_inf:.8f}")
+        print(f"Freestream pressure     = {p_inf:.8f} Pa")
+        print(f"Half-angle epsilon      = {epsilon_deg:.8f} deg")
+        print(f"Angle of attack         = {alpha_deg:.8f} deg")
+
+        print(f"Upper-front pressure    = {p_upper_front:.8f} Pa")
+        print(f"Upper-rear pressure     = {p_upper_rear:.8f} Pa")
+        print(f"Lower-front pressure    = {p_lower_front:.8f} Pa")
+        print(f"Lower-rear pressure     = {p_lower_rear:.8f} Pa")
+
+        print(f"Lift per span L'        = {lift_per_span:.8f} N/m")
+        print(f"Drag per span D'        = {drag_per_span:.8f} N/m")
+        print(f"Lift coefficient CL    = {CL:.8f}")
+        print(f"Drag coefficient CD    = {CD:.8f}")
+
+        print("\nTotal L and D:")
+        print("Not calculated: span was not one of the five inputs.")
+        print("For a known span b: L = L' * b and D = D' * b.")
+
+        print("\nAbsolute T, rho, V and a:")
+        print("Not determined from Mach number and pressure alone.")
+        print("The pressure ratios and aerodynamic coefficients above")
+        print("do not require those additional freestream properties.")
 
 
     # ==========================================================
